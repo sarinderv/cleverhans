@@ -97,6 +97,34 @@ class MNIST(Dataset):
     return (self.in_memory_dataset(self.x_train, self.y_train, shuffle),
             self.in_memory_dataset(self.x_test, self.y_test, repeat=False))
 
+class Fashion_MNIST(Dataset):
+  """The MNIST dataset"""
+
+  NB_CLASSES = 10
+
+  def __init__(self, train_start=0, train_end=60000, test_start=0,
+               test_end=10000, center=False, max_val=1.):
+    super(Fashion_MNIST, self).__init__(locals())
+    x_train, y_train, x_test, y_test = data_fashion_mnist(train_start=train_start,
+                                                  train_end=train_end,
+                                                  test_start=test_start,
+                                                  test_end=test_end)
+
+    if center:
+      x_train = x_train * 2. - 1.
+      x_test = x_test * 2. - 1.
+    #x_train *= max_val
+    #x_test *= max_val
+
+    self.x_train = x_train.astype('float32')
+    self.y_train = y_train.astype('float32')
+    self.x_test = x_test.astype('float32')
+    self.y_test = y_test.astype('float32')
+
+  def to_tensorflow(self, shuffle=4096):
+    return (self.in_memory_dataset(self.x_train, self.y_train, shuffle),
+            self.in_memory_dataset(self.x_test, self.y_test, repeat=False))
+
 
 class CIFAR10(Dataset):
   """The CIFAR-10 dataset"""
@@ -292,3 +320,48 @@ def data_cifar10(train_start=0, train_end=50000, test_start=0, test_end=10000):
   y_test = y_test[test_start:test_end, :]
 
   return x_train, y_train, x_test, y_test
+
+def data_fashion_mnist(datadir=tempfile.gettempdir(), train_start=0,
+                       train_end=60000, test_start=0, test_end=10000):
+  """
+  Load Fashion MNIST dataset
+  :param datadir: path to folder where data should be stored
+  :param train_start: index of first training set example
+  :param train_end: index of last training set example
+  :param test_start: index of first test set example
+  :param test_end: index of last test set example
+  :return: tuple of four arrays containing training data, training labels,
+           testing data and testing labels.
+  """
+  assert isinstance(train_start, int)
+  assert isinstance(train_end, int)
+  assert isinstance(test_start, int)
+  assert isinstance(test_end, int)
+
+  global keras_imported
+  if not keras_imported:
+    import keras
+    from keras.datasets import fashion_mnist
+    from keras.utils import np_utils
+
+  # These values are specific to CIFAR10
+  img_rows = 32
+  img_cols = 32
+  nb_classes = 10
+
+  # the data, shuffled and split between train and test sets
+  (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+
+  x_train = np.expand_dims(x_train, -1)
+  x_test = np.expand_dims(x_test, -1)
+
+  x_train = x_train[train_start:train_end]
+  y_train = y_train[train_start:train_end]
+  x_test = x_test[test_start:test_end]
+  y_test = y_test[test_start:test_end]
+
+  y_train = utils.to_categorical(y_train, nb_classes=10)
+  y_test = utils.to_categorical(y_test, nb_classes=10)
+
+  return x_train, y_train, x_test, y_test
+

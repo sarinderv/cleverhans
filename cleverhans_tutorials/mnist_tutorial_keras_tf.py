@@ -19,8 +19,8 @@ import numpy as np
 import keras
 from keras import backend
 
-from cleverhans.attacks import FastGradientMethod
-from cleverhans.dataset import MNIST
+from cleverhans.attacks import BasicIterativeMethod
+from cleverhans.dataset import Fashion_MNIST
 from cleverhans.loss import CrossEntropy
 from cleverhans.train import train
 from cleverhans.utils import AccuracyReport
@@ -30,7 +30,7 @@ from cleverhans.utils_tf import model_eval
 
 FLAGS = flags.FLAGS
 
-NB_EPOCHS = 6
+NB_EPOCHS = 1
 BATCH_SIZE = 128
 LEARNING_RATE = .001
 TRAIN_DIR = 'train_dir'
@@ -81,7 +81,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
   keras.backend.set_session(sess)
 
   # Get MNIST test data
-  mnist = MNIST(train_start=train_start, train_end=train_end,
+  mnist = Fashion_MNIST(train_start=train_start, train_end=train_end,
                 test_start=test_start, test_end=test_end)
   x_train, y_train = mnist.get_set('train')
   x_test, y_test = mnist.get_set('test')
@@ -147,7 +147,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
     report.train_clean_train_clean_eval = acc
 
   # Initialize the Fast Gradient Sign Method (FGSM) attack object and graph
-  fgsm = FastGradientMethod(wrap, sess=sess)
+  fgsm = BasicIterativeMethod(wrap, sess=sess)
   fgsm_params = {'eps': 0.3,
                  'clip_min': 0.,
                  'clip_max': 1.}
@@ -176,7 +176,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
                       nb_classes=nb_classes)
   wrap_2 = KerasModelWrapper(model_2)
   preds_2 = model_2(x)
-  fgsm2 = FastGradientMethod(wrap_2, sess=sess)
+  fgsm2 = BasicIterativeMethod(wrap_2, sess=sess)
 
   def attack(x):
     return fgsm2.generate(x, **fgsm_params)
