@@ -95,6 +95,10 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
                                         nchannels))
   y = tf.placeholder(tf.float32, shape=(None, nb_classes))
 
+  model = tf.keras.models.load_model('fashion_mnist_cnn.h5')
+  if (model):
+    print("Model loaded from: {}".format("fashion_mnist_cnn.h5"))
+
   # Define TF model graph
   model = cnn_model(img_rows=img_rows, img_cols=img_cols,
                     channels=nchannels, nb_filters=64,
@@ -139,6 +143,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
     loss = CrossEntropy(wrap, smoothing=label_smoothing)
     train(sess, loss, x_train, y_train, evaluate=evaluate,
           args=train_params, rng=rng)
+    model.save('fashion_mnist_cnn.h5')
 
   # Calculate training error
   if testing:
