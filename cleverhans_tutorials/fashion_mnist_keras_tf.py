@@ -30,7 +30,7 @@ from cleverhans.utils_tf import model_eval
 
 FLAGS = flags.FLAGS
 
-NB_EPOCHS = 5
+NB_EPOCHS = 1
 BATCH_SIZE = 128
 LEARNING_RATE = .001
 TRAIN_DIR = 'train_dir'
@@ -155,7 +155,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
                  'clip_max': 1.}
 
   # Display a grid of some adversarial examples
-  adv_viz(fgsm, x_test, y_test, nb_classes)
+  adv_viz(fgsm, fgsm_params, x_test, y_test, nb_classes, img_rows, img_cols, nchannels)
 
   adv_x = fgsm.generate(x, **fgsm_params)
   print('adv_x=', adv_x)
@@ -212,7 +212,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
         args=train_params, rng=rng)
 
   # Display a grid of some adversarial examples using the adversarially trained model
-  adv_viz(fgsm2, x_test, y_test, nb_classes)
+  adv_viz(fgsm2, fgsm_params, x_test, y_test, nb_classes, img_rows, img_cols, nchannels)
 
   # Calculate training errors
   if testing:
@@ -227,7 +227,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
   return report
 
 # Visualize adversarial images from a trained network
-def adv_viz(fgsm, x_test, y_test, nb_classes):
+def adv_viz(fgsm, fgsm_params, x_test, y_test, nb_classes, img_rows, img_cols, nchannels):
   # Generate adversarial images ...
   idxs = [np.where(np.argmax(y_test, axis=1) == i)[0][0]
                 for i in range(nb_classes)]
