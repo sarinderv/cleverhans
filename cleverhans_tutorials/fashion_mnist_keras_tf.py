@@ -154,28 +154,8 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
                  'clip_min': 0.,
                  'clip_max': 1.}
 
-  # Generate adversarial images ...
-  idxs = [np.where(np.argmax(y_test, axis=1) == i)[0][0]
-                for i in range(nb_classes)]
-  adv_inputs = x_test[idxs]
-  adv_images = fgsm.generate_np(adv_inputs, **fgsm_params)
-
-  # Initialize our array for grid visualization
-  grid_shape = (nb_classes, 2, img_rows, img_cols, nchannels)
-  grid_viz_data = np.zeros(grid_shape, dtype='f')
-  for j in range(nb_classes):
-    grid_viz_data[j, 0] = adv_inputs[j]
-    grid_viz_data[j, 1] = adv_images[j]
-  print('grid_viz_data.shape=', grid_viz_data.shape)
-
-  # Finally, block & display a grid of all the adversarial examples
-  import matplotlib.pyplot as plt
-  _ = grid_visual(grid_viz_data)
-
-  # Compute the average distortion introduced by the algorithm
-  percent_perturbed = np.mean(np.sum((adv_images - adv_inputs)**2,
-                                     axis=(1, 2, 3))**.5)
-  print('Avg. L_2 norm of perturbations {0:.4f}'.format(percent_perturbed))
+  # Display a grid of some adversarial examples
+  adv_viz(fgsm, x_test, y_test, nb_classes)
 
   adv_x = fgsm.generate(x, **fgsm_params)
   print('adv_x=', adv_x)
@@ -231,6 +211,9 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
   train(sess, loss_2, x_train, y_train, evaluate=evaluate_2,
         args=train_params, rng=rng)
 
+  # Display a grid of some adversarial examples using the adversarially trained model
+  adv_viz(fgsm2, x_test, y_test, nb_classes)
+
   # Calculate training errors
   if testing:
     eval_params = {'batch_size': batch_size}
@@ -242,6 +225,32 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
     report.train_adv_train_adv_eval = accuracy
 
   return report
+
+# Visualize adversarial images from a trained network
+def adv_viz(fgsm, x_test, y_test, nb_classes):
+  # Generate adversarial images ...
+  idxs = [np.where(np.argmax(y_test, axis=1) == i)[0][0]
+                for i in range(nb_classes)]
+  adv_inputs = x_test[idxs]
+  adv_images = fgsm.generate_np(adv_inputs, **fgsm_params)
+
+  # Initialize our array for grid visualization
+  grid_shape = (nb_classes, 2, img_rows, img_cols, nchannels)
+  grid_viz_data = np.zeros(grid_shape, dtype='f')
+  for j in range(nb_classes):
+    grid_viz_data[j, 0] = adv_inputs[j]
+    grid_viz_data[j, 1] = adv_images[j]
+  print('grid_viz_data.shape=', grid_viz_data.shape)
+
+  # Compute the average distortion introduced by the algorithm
+  percent_perturbed = np.mean(np.sum((adv_images - adv_inputs)**2,
+                                     axis=(1, 2, 3))**.5)
+  print('Avg. L_2 norm of perturbations {0:.4f}'.format(percent_perturbed))
+
+  # Finally, block & display a grid of all the adversarial examples
+  #import matplotlib.pyplot as plt
+  from cleverhans.plot.pyplot_image import grid_visual
+  return grid_visual(grid_viz_data)
 
 
 def main(argv=None):
