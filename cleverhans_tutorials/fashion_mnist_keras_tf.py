@@ -30,7 +30,7 @@ from cleverhans.utils_tf import model_eval
 
 FLAGS = flags.FLAGS
 
-NB_EPOCHS = 1
+NB_EPOCHS = 5
 BATCH_SIZE = 128
 LEARNING_RATE = .001
 FILENAME = 'fashion_mnist.h5'
@@ -38,7 +38,7 @@ FILENAME = 'fashion_mnist.h5'
 
 def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
                    test_end=10000, nb_epochs=NB_EPOCHS, batch_size=BATCH_SIZE,
-                   learning_rate=LEARNING_RATE, filename=FILENAME, testing=True, label_smoothing=0.1):
+                   learning_rate=LEARNING_RATE, filename=FILENAME, testing=False, label_smoothing=0.1):
   """
   MNIST CleverHans tutorial
   :param train_start: index of first training set example
@@ -93,12 +93,9 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
   try: # load a previously trained model
     model = tf.keras.models.load_model(filename)
     modelNeedsTraining = False
+    print("Model loaded from: {}".format(filename))
   except OSError as e:
     print(e)
-
-  if (model):
-    print("Model loaded from: {}".format(filename))
-  else:
     # Define TF model graph
     model = cnn_model(img_rows=img_rows, img_cols=img_cols,
                       channels=nchannels, nb_filters=64,
@@ -141,6 +138,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
     eval_params = {'batch_size': batch_size}
     acc = model_eval(sess, x, y, preds, x_train, y_train, args=eval_params)
     report.train_clean_train_clean_eval = acc
+    print('Train accuracy on clean examples: %0.4f\n' % acc)
 
   # Initialize the Fast Gradient Sign Method (FGSM) attack object and graph
   fgsm = BasicIterativeMethod(wrap, sess=sess)
@@ -173,6 +171,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
     acc = model_eval(sess, x, y, preds_adv, x_train,
                      y_train, args=eval_par)
     report.train_clean_train_adv_eval = acc
+    print('Train accuracy on adversarial examples: %0.4f\n' % acc)
 
   print("Repeating the process, using adversarial training")
   # Redefine TF model graph
