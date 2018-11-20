@@ -33,16 +33,12 @@ FLAGS = flags.FLAGS
 NB_EPOCHS = 1
 BATCH_SIZE = 128
 LEARNING_RATE = .001
-TRAIN_DIR = 'train_dir'
-FILENAME = 'mnist.ckpt'
-LOAD_MODEL = False
+FILENAME = 'fashion_mnist.h5'
 
 
 def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
                    test_end=10000, nb_epochs=NB_EPOCHS, batch_size=BATCH_SIZE,
-                   learning_rate=LEARNING_RATE, train_dir=TRAIN_DIR,
-                   filename=FILENAME, load_model=LOAD_MODEL,
-                   testing=False, label_smoothing=0.1):
+                   learning_rate=LEARNING_RATE, filename=FILENAME, testing=True, label_smoothing=0.1):
   """
   MNIST CleverHans tutorial
   :param train_start: index of first training set example
@@ -52,9 +48,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
   :param nb_epochs: number of epochs to train model
   :param batch_size: size of training batches
   :param learning_rate: learning rate for training
-  :param train_dir: Directory storing the saved model
   :param filename: Filename to save model under
-  :param load_model: True for load, False for not load
   :param testing: if true, test error is calculated
   :param label_smoothing: float, amount of label smoothing for cross entropy
   :return: an AccuracyReport object
@@ -95,14 +89,21 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
                                         nchannels))
   y = tf.placeholder(tf.float32, shape=(None, nb_classes))
 
-  model = tf.keras.models.load_model('fashion_mnist_cnn.h5')
-  if (model):
-    print("Model loaded from: {}".format("fashion_mnist_cnn.h5"))
+  modelNeedsTraining = True
+  try: # load a previously trained model
+    model = tf.keras.models.load_model(filename)
+    modelNeedsTraining = False
+  except OSError as e:
+    print(e)
 
-  # Define TF model graph
-  model = cnn_model(img_rows=img_rows, img_cols=img_cols,
-                    channels=nchannels, nb_filters=64,
-                    nb_classes=nb_classes)
+  if (model):
+    print("Model loaded from: {}".format(filename))
+  else:
+    # Define TF model graph
+    model = cnn_model(img_rows=img_rows, img_cols=img_cols,
+                      channels=nchannels, nb_filters=64,
+                      nb_classes=nb_classes)
+  
   preds = model(x)
   print("Defined TensorFlow model graph.")
 
@@ -119,31 +120,21 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
       'nb_epochs': nb_epochs,
       'batch_size': batch_size,
       'learning_rate': learning_rate,
-      'train_dir': train_dir,
       'filename': filename
   }
 
   rng = np.random.RandomState([2017, 8, 30])
-  if not os.path.exists(train_dir):
-    os.mkdir(train_dir)
 
-  ckpt = tf.train.get_checkpoint_state(train_dir)
-  print(train_dir, ckpt)
-  ckpt_path = False if ckpt is None else ckpt.model_checkpoint_path
   wrap = KerasModelWrapper(model)
 
-  if load_model and ckpt_path:
-    saver = tf.train.Saver()
-    print(ckpt_path)
-    saver.restore(sess, ckpt_path)
-    print("Model loaded from: {}".format(ckpt_path))
-    evaluate()
-  else:
+  if modelNeedsTraining:
     print("Model was not loaded, training from scratch.")
     loss = CrossEntropy(wrap, smoothing=label_smoothing)
     train(sess, loss, x_train, y_train, evaluate=evaluate,
           args=train_params, rng=rng)
-    model.save('fashion_mnist_cnn.h5')
+    model.save(filename)
+  else:
+    evaluate()
 
   # Calculate training error
   if testing:
@@ -265,9 +256,7 @@ def main(argv=None):
   mnist_tutorial(nb_epochs=FLAGS.nb_epochs,
                  batch_size=FLAGS.batch_size,
                  learning_rate=FLAGS.learning_rate,
-                 train_dir=FLAGS.train_dir,
-                 filename=FLAGS.filename,
-                 load_model=FLAGS.load_model)
+                 filename=FLAGS.filename)
 
 
 if __name__ == '__main__':
@@ -276,9 +265,5 @@ if __name__ == '__main__':
   flags.DEFINE_integer('batch_size', BATCH_SIZE, 'Size of training batches')
   flags.DEFINE_float('learning_rate', LEARNING_RATE,
                      'Learning rate for training')
-  flags.DEFINE_string('train_dir', TRAIN_DIR,
-                      'Directory where to save model.')
   flags.DEFINE_string('filename', FILENAME, 'Checkpoint filename.')
-  flags.DEFINE_boolean('load_model', LOAD_MODEL,
-                       'Load saved model or train.')
   tf.app.run()
